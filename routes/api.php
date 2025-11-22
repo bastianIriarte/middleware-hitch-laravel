@@ -179,4 +179,32 @@ Route::middleware('auth:api')->group(function () {
     // Route::get('/ventas/por-tienda', [SalesController::class, 'getSalesByStore']);
 
     // Route::get('/stock/por-tienda', [StockController::class, 'getStockByStore']);
+
+    #*********************************************#
+    #********* FILE MANAGEMENT SYSTEM ************#
+    #*********************************************#
+
+    // FILE UPLOADS
+    Route::prefix('files')->group(function () {
+        Route::post('/upload/{company_code}/{file_type_code}', [App\Http\Controllers\Api\FileUploadController::class, 'uploadFile']);
+        Route::post('/errors/report', [App\Http\Controllers\Api\FileUploadController::class, 'reportErrors']);
+    });
+
+    // FILE CONFIGURATION
+    Route::prefix('config')->group(function () {
+        Route::get('/companies', [App\Http\Controllers\Api\FileConfigController::class, 'getCompanies']);
+        Route::get('/file-types', [App\Http\Controllers\Api\FileConfigController::class, 'getFileTypes']);
+        Route::get('/ftp/{companyId}', [App\Http\Controllers\Api\FileConfigController::class, 'getFtpConfig']);
+        Route::post('/ftp/save', [App\Http\Controllers\Api\FileConfigController::class, 'saveFtpConfig']);
+        Route::post('/ftp/test/{companyId}', [App\Http\Controllers\Api\FileConfigController::class, 'testFtpConnection']);
+        Route::patch('/companies/{companyId}/status', [App\Http\Controllers\Api\FileConfigController::class, 'updateCompanyStatus']);
+        Route::patch('/file-types/{fileTypeId}/status', [App\Http\Controllers\Api\FileConfigController::class, 'updateFileTypeStatus']);
+    });
+
+    // FILE LOGS
+    Route::prefix('logs')->group(function () {
+        Route::get('/files', [App\Http\Controllers\Api\FileLogsController::class, 'getLogs']);
+        Route::get('/errors', [App\Http\Controllers\Api\FileLogsController::class, 'getErrors']);
+        Route::get('/stats', [App\Http\Controllers\Api\FileLogsController::class, 'getStats']);
+    });
 });

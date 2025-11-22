@@ -24,9 +24,31 @@ class ApiResponse
         ], $code > 0 ? $code : 400);
     }
 
-    public static function validationError(array $errors)
+    public function validationError(array $errors)
     {
         return self::error('Los datos proporcionados no son válidos.', $errors, 422);
+    }
+
+    public static function successWithTotal($data = [], int $total = 0, string $message = 'Operación exitosa', int $status = 200)
+    {
+        return response()->json([
+            'success' => true,
+            'status' => $status,
+            'message' => $message,
+            'total' => $total,
+            'data' => $data,
+        ], $status);
+    }
+
+    public static function errorWithStatus(string $message = 'Ocurrió un error', $data = null, int $status = 400)
+    {
+        return response()->json([
+            'success' => false,
+            'status' => $status,
+            'message' => $message,
+            'total' => 0,
+            'data' => $data,
+        ], $status);
     }
 
     public static function flattenToString($input, string $separator = ' | '): string

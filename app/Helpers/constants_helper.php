@@ -8,7 +8,7 @@ define('REMITENTE_BASE', '');
 define('MAIL_BASE', '');
 define('USER_MAIL_SENDGRID', '');
 define('COMPANY_NAME', "Middleware HITCH");
-define('TYPE_MODE', "PRODUCTION"); // PRODUCTION o DEV
+define('TYPE_MODE', "DEV"); // PRODUCTION o DEV
 
 $public_folder = '';
 if (TYPE_MODE == 'PRODUCTION') {

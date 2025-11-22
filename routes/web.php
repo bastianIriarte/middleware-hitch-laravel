@@ -68,6 +68,20 @@ Route::post('/dashboard/integraciones/{slug}/cerrar', [IntegrationsController::c
 Route::get('/dashboard/conexiones', [ApiConnectionsController::class, 'index'])->name('api-connections');
 Route::post('/dashboard/conexiones/actualizar', [ApiConnectionsController::class, 'update'])->name('api-connections-update');
 
+#*********************************************#
+#******** ROUTES FILE MANAGEMENT *************#
+#*********************************************#
+Route::prefix('dashboard/archivos')->name('file-management.')->group(function () {
+    Route::get('/', [App\Http\Controllers\FileManagementController::class, 'index'])->name('index');
+    Route::get('/empresas', [App\Http\Controllers\FileManagementController::class, 'companies'])->name('companies');
+    Route::get('/empresas/{companyId}/ftp', [App\Http\Controllers\FileManagementController::class, 'ftpConfig'])->name('ftp-config');
+    Route::post('/ftp/guardar', [App\Http\Controllers\FileManagementController::class, 'saveFtpConfig'])->name('ftp-save');
+    Route::get('/empresas/{companyId}/ftp/test', [App\Http\Controllers\FileManagementController::class, 'testFtpConnection'])->name('test-ftp');
+    Route::get('/logs', [App\Http\Controllers\FileManagementController::class, 'logs'])->name('logs');
+    Route::get('/errores', [App\Http\Controllers\FileManagementController::class, 'errors'])->name('errors');
+    Route::get('/estadisticas', [App\Http\Controllers\FileManagementController::class, 'stats'])->name('stats');
+});
+
 Route::get('api/documentation/swagger.json', function () {
     return response()->file(storage_path('api-docs/api-docs.json'));
 });

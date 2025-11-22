@@ -20,5 +20,9 @@ class DatabaseSeeder extends Seeder
         $this->call(ApiConnectionSeeder::class);
         $this->call(ResourceSeeder::class);
         $this->call(IntegrationsViewSeeder::class);
+
+        // File Management System
+        $this->call(CompanySeeder::class);
+        $this->call(FileTypeSeeder::class);
     }
 }
