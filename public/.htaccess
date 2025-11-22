@@ -1,0 +1,73 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews
+    </IfModule>
+
+    RewriteEngine On
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+    # Handle Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Deny Access to composer.json
+<Files "composer.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny Access to composer.lock
+<Files "composer.lock">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny Access to package.json
+<Files "package.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny Access to package-lock.json
+<Files "package-lock.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny Access to env
+<Files ".env">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny Access to styleci
+<Files ".styleci.yml">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny Access to editorconfig
+<Files ".editorconfig">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Enable HSTS
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+</IfModule>
+
+# Add Secure Flag to Cookies
+<IfModule mod_headers.c>
+    Header always edit Set-Cookie ^(.*)$ $1;Secure
+</IfModule>
+
+# Add Secure Flag to HttpOnly
+<IfModule mod_headers.c>
+    Header always edit Set-Cookie ^(.*)$ $1;HttpOnly
+</IfModule>
