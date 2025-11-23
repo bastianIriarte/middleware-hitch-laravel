@@ -108,7 +108,22 @@ class ProcessWattsExtraction implements ShouldQueue
 
                     // Subir archivo al FTP
                     $filename = $result['filename'] ?? "extraction_{$this->extractionType}_" . now()->format('Y-m-d_His') . ".txt";
-                    $uploadResult = $ftpService->uploadFile($ftpConfig, $filename, $result['fileContent']);
+                    
+                    // Guardar el contenido en un archivo temporal
+                    $tempPath = storage_path('app/temp/' . $filename);
+                    if (!file_exists(dirname($tempPath))) {
+                        mkdir(dirname($tempPath), 0755, true);
+                    }
+                    file_put_contents($tempPath, $result['fileContent']);
+                    
+                    // Subir al FTP usando el Company object y la ruta del archivo temporal
+                    $remotePath = $filename;
+                    $uploadResult = $ftpService->uploadFile($company, $tempPath, $remotePath);
+                    
+                    // Eliminar archivo temporal
+                    if (file_exists($tempPath)) {
+                        unlink($tempPath);
+                    }
 
                     if (!$uploadResult['success']) {
                         throw new \Exception("Error al subir archivo al FTP: " . $uploadResult['message']);
@@ -159,7 +174,7 @@ class ProcessWattsExtraction implements ShouldQueue
                     $this->createErrorLog($fileLog, $result['message']);
                 }
 
-                // Si falla, lanzar excepción para reintentar
+                // Lanzar excepción para reintentar (hasta 3 veces)
                 throw new \Exception($result['message']);
             }
         } catch (\Exception $e) {

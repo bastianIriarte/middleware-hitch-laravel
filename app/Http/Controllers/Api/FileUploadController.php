@@ -8,6 +8,7 @@ use App\Http\Requests\ErrorReportRequest;
 use App\Models\Company;
 use App\Models\FileType;
 use App\Services\FileLogService;
+use App\Jobs\ProcessFileUpload;
 use App\Helpers\ApiResponse;
 use Exception;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class FileUploadController extends Controller
                 'file_name' => $request->hasFile('file') ? $request->file('file')->getClientOriginalName() : null,
             ]);
 
+            // Validar que existe la empresa y está activa
             $company = Company::where('code', $company_code)
                 ->where('status', true)
                 ->first();
@@ -52,6 +54,7 @@ class FileUploadController extends Controller
                 );
             }
 
+            // Validar que existe el tipo de archivo y está activo
             $fileType = FileType::where('code', $file_type_code)
                 ->where('status', true)
                 ->first();
@@ -72,9 +75,10 @@ class FileUploadController extends Controller
                 );
             }
 
+            // Obtener usuario autenticado (puede ser null si es API token)
             $user = auth()->user();
             $userId = $user ? $user->id : null;
-            
+
             Log::info('Usuario autenticado', [
                 'user_id' => $userId,
                 'username' => $user ? $user->username : null,
@@ -85,12 +89,13 @@ class FileUploadController extends Controller
                 throw new Exception("No se encontró archivo");
             }
 
-            Log::info('Llamando a logReceivedFile', [
+            Log::info('Guardando archivo recibido', [
                 'company_id' => $company->id,
                 'file_type_id' => $fileType->id,
                 'user_id' => $userId,
             ]);
 
+            // Guardar el archivo inmediatamente
             $logResult = $this->fileLogService->logReceivedFile(
                 $company,
                 $fileType,
@@ -115,6 +120,7 @@ class FileUploadController extends Controller
 
             $fileLog = $logResult['file_log'];
 
+            // Actualizar contadores si vienen en el request
             if ($request->has('records_count')) {
                 $fileLog->update(['records_count' => $request->records_count]);
                 Log::info('Actualizado records_count', ['records_count' => $request->records_count]);
@@ -125,50 +131,40 @@ class FileUploadController extends Controller
                 Log::info('Actualizado rejected_count', ['rejected_count' => $request->rejected_count]);
             }
 
-            Log::info('Llamando a processAndUploadFile', ['file_log_id' => $fileLog->id]);
+            // Encolar el job para procesar el archivo después de la respuesta HTTP
+            // Similar a WattsExtractionController, el archivo se procesará en segundo plano
+            ProcessFileUpload::dispatch($fileLog->id)->afterResponse();
 
-            $uploadResult = $this->fileLogService->processAndUploadFile($fileLog);
-
-            Log::info('Resultado de processAndUploadFile', [
-                'success' => $uploadResult['success'],
-                'message' => $uploadResult['message'] ?? null,
-                'file_log_status' => $fileLog->fresh()->status ?? null,
+            Log::info('Job de procesamiento encolado', [
+                'file_log_id' => $fileLog->id,
+                'job' => 'ProcessFileUpload',
             ]);
 
-            if ($uploadResult['success']) {
-                Log::info('=== UPLOAD EXITOSO ===', [
+            // Retornar respuesta inmediata al watts-api Worker
+            // El archivo ya está guardado con status 'received' y se procesará en background
+            Log::info('=== ARCHIVO RECIBIDO Y ENCOLADO PARA PROCESAMIENTO ===', [
+                'file_log_id' => $fileLog->id,
+                'status' => $fileLog->status,
+                'company' => $company->name,
+                'file_type' => $fileType->name,
+            ]);
+
+            return ApiResponse::successWithTotal(
+                [
                     'file_log_id' => $fileLog->id,
                     'status' => $fileLog->status,
-                ]);
-                
-                return ApiResponse::successWithTotal(
-                    [
-                        'file_log_id' => $fileLog->id,
-                        'status' => $fileLog->status,
-                        'message' => $uploadResult['message'],
-                    ],
-                    1,
-                    'Archivo recibido y procesado correctamente',
-                    200
-                );
-            } else {
-                Log::error('=== UPLOAD FALLIDO ===', [
-                    'file_log_id' => $fileLog->id,
-                    'status' => $fileLog->status,
-                    'message' => $uploadResult['message'],
-                ]);
-                
-                return ApiResponse::errorWithStatus(
-                    $uploadResult['message'],
-                    [
-                        'file_log_id' => $fileLog->id,
-                        'status' => $fileLog->status,
-                    ],
-                    500
-                );
-            }
+                    'message' => 'Archivo recibido y encolado para procesamiento',
+                    'company' => $company->name,
+                    'file_type' => $fileType->name,
+                ],
+                1,
+                'Archivo recibido correctamente. Se procesará en segundo plano.',
+                200
+            );
         } catch (\Exception $e) {
-            Log::error('=== ERROR EN UPLOADFILE ===', [
+            Log::error('=== ERROR CRÍTICO EN UPLOADFILE ===', [
+                'company_code' => $company_code,
+                'file_type_code' => $file_type_code,
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

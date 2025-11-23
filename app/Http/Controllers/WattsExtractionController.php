@@ -184,8 +184,19 @@ class WattsExtractionController extends Controller
 
                 $fileLogIds[$type] = $fileLog->id;
 
-                // Encolar el job con el ID del log
-                ProcessWattsExtraction::dispatch($type, $config, $fileLog->id)->afterResponse();
+                // Encolar el job en una cola específica para este tipo
+                // Esto permite que cada tipo se reintente independientemente sin bloquear a los demás
+                $queueName = "watts_extraction_{$type}";
+                
+                ProcessWattsExtraction::dispatch($type, $config, $fileLog->id)
+                    ->onQueue($queueName)
+                    ->afterResponse();
+                
+                Log::info("[WattsExtractionController] Job encolado en cola específica", [
+                    'type' => $type,
+                    'queue' => $queueName,
+                    'file_log_id' => $fileLog->id,
+                ]);
             }
 
             Log::info("[WattsExtractionController] Todas las extracciones encoladas con logs creados", [

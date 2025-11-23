@@ -78,6 +78,7 @@ Route::prefix('dashboard/archivos')->name('file-management.')->group(function ()
     Route::post('/ftp/guardar', [App\Http\Controllers\FileManagementController::class, 'saveFtpConfig'])->name('ftp-save');
     Route::get('/empresas/{companyId}/ftp/test', [App\Http\Controllers\FileManagementController::class, 'testFtpConnection'])->name('test-ftp');
     Route::get('/logs', [App\Http\Controllers\FileManagementController::class, 'logs'])->name('logs');
+    Route::get('/logs/{id}/detail', [App\Http\Controllers\FileManagementController::class, 'logDetail'])->name('log-detail');
     Route::get('/errores', [App\Http\Controllers\FileManagementController::class, 'errors'])->name('errors');
     Route::get('/estadisticas', [App\Http\Controllers\FileManagementController::class, 'stats'])->name('stats');
 });

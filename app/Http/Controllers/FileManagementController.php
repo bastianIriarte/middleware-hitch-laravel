@@ -207,4 +207,14 @@ class FileManagementController extends Controller
 
         return view('file-management.stats', compact('sidenav', 'stats', 'companies', 'fileTypes', 'recentLogs'));
     }
+
+    public function logDetail($id)
+    {
+        $sidenav = "file_management";
+        
+        $log = FileLog::with(['company', 'fileType', 'errors'])
+            ->findOrFail($id);
+
+        return view('file-management.log-detail', compact('sidenav', 'log'));
+    }
 }

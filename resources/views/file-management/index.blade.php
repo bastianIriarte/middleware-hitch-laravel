@@ -1,123 +1,163 @@
-@extends('layout.layout_admin')
+@extends('layout.layout_tailwind')
 
 @section('title', 'Gestión de Archivos')
 
 @section('contenido')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">Gestión de Archivos</h1>
-        </div>
+
+<div class="space-y-10">
+
+    <!-- Título -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Gestión de Archivos</h1>
+        <p class="text-gray-500 mt-1">Resumen general del estado de los archivos procesados</p>
     </div>
 
     <!-- Estadísticas -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <h5 class="card-title">Empresas</h5>
-                    <p class="card-text display-4">{{ $stats['active_companies'] }}</p>
-                    <small>{{ $stats['total_companies'] }} total</small>
-                </div>
-            </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <!-- Empresas -->
+        <div class="bg-gradient-to-br from-primary-500 to-secondary-600 text-white p-6 rounded-xl shadow-md">
+            <h5 class="text-lg font-semibold">Empresas</h5>
+            <p class="text-4xl font-extrabold mt-3">{{ $stats['active_companies'] }}</p>
+            <p class="text-sm opacity-80">{{ $stats['total_companies'] }} total</p>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <h5 class="card-title">Tipos de Archivo</h5>
-                    <p class="card-text display-4">{{ $stats['active_file_types'] }}</p>
-                    <small>{{ $stats['total_file_types'] }} total</small>
-                </div>
-            </div>
+
+        <!-- Tipos de archivo -->
+        <div class="bg-blue-500 text-white p-6 rounded-xl shadow-md">
+            <h5 class="text-lg font-semibold">Tipos de Archivo</h5>
+            <p class="text-4xl font-extrabold mt-3">{{ $stats['active_file_types'] }}</p>
+            <p class="text-sm opacity-80">{{ $stats['total_file_types'] }} total</p>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <h5 class="card-title">Archivos Subidos</h5>
-                    <p class="card-text display-4">{{ $stats['files_uploaded'] }}</p>
-                    <small>{{ $stats['total_files'] }} total</small>
-                </div>
-            </div>
+
+        <!-- Archivos subidos -->
+        <div class="bg-green-500 text-white p-6 rounded-xl shadow-md">
+            <h5 class="text-lg font-semibold">Archivos Subidos</h5>
+            <p class="text-4xl font-extrabold mt-3">{{ $stats['files_uploaded'] }}</p>
+            <p class="text-sm opacity-80">{{ $stats['total_files'] }} total</p>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-danger">
-                <div class="card-body">
-                    <h5 class="card-title">Errores</h5>
-                    <p class="card-text display-4">{{ $stats['total_errors'] }}</p>
-                    <small>{{ $stats['files_failed'] }} archivos fallidos</small>
-                </div>
-            </div>
+
+        <!-- Errores -->
+        <div class="bg-red-500 text-white p-6 rounded-xl shadow-md">
+            <h5 class="text-lg font-semibold">Errores</h5>
+            <p class="text-4xl font-extrabold mt-3">{{ $stats['total_errors'] }}</p>
+            <p class="text-sm opacity-80">{{ $stats['files_failed'] }} archivos fallidos</p>
         </div>
     </div>
 
-    <!-- Menú de navegación -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="btn-group" role="group">
-                <a href="{{ route('file-management.index') }}" class="btn btn-primary active">Dashboard</a>
-                <a href="{{ route('file-management.companies') }}" class="btn btn-outline-primary">Empresas & FTP</a>
-                <a href="{{ route('file-management.logs') }}" class="btn btn-outline-primary">Logs de Archivos</a>
-                <a href="{{ route('file-management.errors') }}" class="btn btn-outline-primary">Errores</a>
-                <a href="{{ route('file-management.stats') }}" class="btn btn-outline-primary">Estadísticas</a>
-            </div>
-        </div>
+    <!-- Tabs de navegación -->
+    <div class="flex flex-wrap gap-3 border-b pb-2">
+
+        <a href="{{ route('file-management.index') }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold 
+                 @if(request()->routeIs('file-management.index'))
+                     bg-primary-500 text-white shadow
+                 @else
+                     text-primary-700 hover:bg-primary-50
+                 @endif">
+            Dashboard
+        </a>
+
+        <a href="{{ route('file-management.companies') }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold 
+                 {{ request()->routeIs('file-management.companies') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
+            Empresas & FTP
+        </a>
+
+        <a href="{{ route('file-management.logs') }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold 
+                 {{ request()->routeIs('file-management.logs') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
+            Logs de Archivos
+        </a>
+
+        <a href="{{ route('file-management.errors') }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold 
+                 {{ request()->routeIs('file-management.errors') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
+            Errores
+        </a>
+
+        <a href="{{ route('file-management.stats') }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold 
+                 {{ request()->routeIs('file-management.stats') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
+            Estadísticas
+        </a>
     </div>
 
     <!-- Logs Recientes -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Logs Recientes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Empresa</th>
-                                    <th>Tipo</th>
-                                    <th>Archivo</th>
-                                    <th>Estado</th>
-                                    <th>Registros</th>
-                                    <th>Rechazados</th>
-                                    <th>Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentLogs as $log)
-                                <tr>
-                                    <td>{{ $log->id }}</td>
-                                    <td>{{ $log->company->name }}</td>
-                                    <td>{{ $log->fileType->name }}</td>
-                                    <td>{{ $log->original_filename }}</td>
-                                    <td>
-                                        @if($log->status === 'uploaded')
-                                            <span class="badge bg-success">Subido</span>
-                                        @elseif($log->status === 'failed')
-                                            <span class="badge bg-danger">Fallido</span>
-                                        @elseif($log->status === 'processing')
-                                            <span class="badge bg-warning">Procesando</span>
-                                        @else
-                                            <span class="badge bg-secondary">{{ $log->status }}</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ number_format($log->records_count) }}</td>
-                                    <td>{{ number_format($log->rejected_count) }}</td>
-                                    <td>{{ $log->created_at->format('d/m/Y H:i') }}</td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="8" class="text-center">No hay logs recientes</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <div class="bg-white shadow-md rounded-xl border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h5 class="text-lg font-semibold text-gray-800">Logs Recientes</h5>
+        </div>
+
+        <div class="p-4 overflow-x-auto">
+            <table class="min-w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                        <th class="px-4 py-3">ID</th>
+                        <th class="px-4 py-3">Empresa</th>
+                        <th class="px-4 py-3">Tipo</th>
+                        <th class="px-4 py-3">Archivo</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3">Registros</th>
+                        <th class="px-4 py-3">Rechazados</th>
+                        <th class="px-4 py-3">Fecha</th>
+                        <th class="px-4 py-3">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y">
+
+                    @forelse($recentLogs as $log)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">{{ $log->id }}</td>
+                        <td class="px-4 py-3">{{ $log->company->name }}</td>
+                        <td class="px-4 py-3">{{ $log->fileType->name }}</td>
+                        <td class="px-4 py-3">{{ Str::limit($log->original_filename, 40) }}</td>
+
+                        <td class="px-4 py-3">
+                            @switch($log->status)
+
+                                @case('uploaded')
+                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">Subido</span>
+                                @break
+
+                                @case('failed')
+                                    <span class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded">Fallido</span>
+                                @break
+
+                                @case('processing')
+                                    <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">Procesando</span>
+                                @break
+
+                                @default
+                                    <span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">{{ $log->status }}</span>
+                            @endswitch
+                        </td>
+
+                        <td class="px-4 py-3">{{ number_format($log->records_count ?? 0) }}</td>
+                        <td class="px-4 py-3">{{ number_format($log->rejected_count ?? 0) }}</td>
+                        <td class="px-4 py-3">{{ $log->created_at->format('d/m/Y H:i') }}</td>
+
+                        <td class="px-4 py-3">
+                            <a href="{{ route('file-management.log-detail', $log->id) }}"
+                               class="text-primary-600 hover:text-primary-800 font-semibold text-xs">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+
+                    @empty
+                    <tr>
+                        <td colspan="9" class="text-center py-6 text-gray-500">
+                            No hay logs recientes
+                        </td>
+                    </tr>
+                    @endforelse
+
+                </tbody>
+            </table>
         </div>
     </div>
+
 </div>
+
 @endsection
