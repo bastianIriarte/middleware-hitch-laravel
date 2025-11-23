@@ -67,20 +67,93 @@ class FtpService
         }
     }
 
+    /**
+     * Sube contenido de archivo directamente al FTP sin necesidad de archivo local
+     *
+     * @param FtpConfig $ftpConfig Configuración FTP
+     * @param string $filename Nombre del archivo remoto
+     * @param string $fileContent Contenido del archivo
+     * @return array
+     */
+    public function uploadFileContent(FtpConfig $ftpConfig, string $filename, string $fileContent)
+    {
+        try {
+            if (!$ftpConfig || !$ftpConfig->status) {
+                return [
+                    'success' => false,
+                    'message' => 'Configuración FTP no está activa',
+                ];
+            }
+
+            $diskConfig = $this->buildFtpDiskConfig($ftpConfig);
+
+            config(['filesystems.disks.dynamic_ftp' => $diskConfig]);
+
+            // Construir ruta remota
+            $remotePath = trim($ftpConfig->root_path ?? '', '/') . '/' . $filename;
+
+            $uploaded = Storage::disk('dynamic_ftp')->put($remotePath, $fileContent);
+
+            if ($uploaded) {
+                Log::info("Archivo subido exitosamente al FTP (desde contenido)", [
+                    'filename' => $filename,
+                    'remote_path' => $remotePath,
+                    'size' => strlen($fileContent),
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Archivo subido exitosamente al FTP',
+                    'remote_path' => $remotePath,
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Error al subir archivo al FTP',
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error("Error en uploadFileContent FTP", [
+                'filename' => $filename,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al subir archivo: ' . $e->getMessage(),
+            ];
+        }
+    }
+
     public function testConnection(FtpConfig $ftpConfig)
     {
         try {
-            Log::info('=== TEST FTP CONNECTION INICIO ===', [
+            // Obtener la contraseña desencriptada
+            $decryptedPassword = $ftpConfig->password;
+            $passwordLength = strlen($decryptedPassword);
+            $passwordPreview = $passwordLength > 0 ? substr($decryptedPassword, 0, 2) . str_repeat('*', min($passwordLength - 2, 6)) : '[VACÍA]';
+            $protocol = $ftpConfig->protocol ?? 'ftp';
+
+            Log::info('=== TEST CONNECTION INICIO ===', [
+                'protocol' => strtoupper($protocol),
                 'host' => $ftpConfig->host,
                 'port' => $ftpConfig->port,
                 'username' => $ftpConfig->username,
                 'ssl' => $ftpConfig->ssl,
                 'passive' => $ftpConfig->passive,
+                'password_length' => $passwordLength,
+                'password_preview' => $passwordPreview,
             ]);
 
-            // Intentar conexión con funciones nativas de PHP FTP
+            // Si es SFTP, usar Laravel Storage directamente
+            if ($protocol === 'sftp') {
+                return $this->testSftpConnection($ftpConfig);
+            }
+
+            // FTP tradicional - usar funciones nativas de PHP
             $connection = null;
-            
+
             if ($ftpConfig->ssl) {
                 Log::info('Intentando conexión FTP con SSL...');
                 $connection = @ftp_ssl_connect($ftpConfig->host, $ftpConfig->port, $ftpConfig->timeout);
@@ -94,17 +167,20 @@ class FtpService
                     'host' => $ftpConfig->host,
                     'port' => $ftpConfig->port,
                 ]);
-                
+
                 return [
                     'success' => false,
                     'message' => 'No se pudo conectar al servidor FTP. Verifica el host y puerto.',
                 ];
             }
 
-            Log::info('Conexión establecida, intentando login...');
+            Log::info('Conexión establecida, intentando login...', [
+                'username' => $ftpConfig->username,
+                'password_length' => $passwordLength,
+            ]);
 
-            // Intentar login
-            $login = @ftp_login($connection, $ftpConfig->username, $ftpConfig->password);
+            // Intentar login con la contraseña desencriptada
+            $login = @ftp_login($connection, $ftpConfig->username, $decryptedPassword);
 
             if (!$login) {
                 ftp_close($connection);
@@ -199,8 +275,77 @@ class FtpService
         }
     }
 
+    protected function testSftpConnection(FtpConfig $ftpConfig)
+    {
+        try {
+            Log::info('Intentando conexión SFTP con Laravel Storage...');
+
+            // Crear configuración de disco SFTP
+            $diskConfig = $this->buildFtpDiskConfig($ftpConfig);
+            config(['filesystems.disks.test_sftp' => $diskConfig]);
+
+            // Intentar crear archivo de prueba
+            $testFileName = 'test_connection_' . time() . '.txt';
+            $testContent = 'Test SFTP connection from middleware_hitch at ' . now()->toDateTimeString();
+
+            Log::info('Intentando subir archivo de prueba SFTP', ['filename' => $testFileName]);
+
+            $uploaded = Storage::disk('test_sftp')->put($testFileName, $testContent);
+
+            if ($uploaded) {
+                Log::info('Archivo de prueba SFTP subido exitosamente');
+
+                // Intentar eliminar el archivo de prueba
+                $deleted = Storage::disk('test_sftp')->delete($testFileName);
+                Log::info('Archivo de prueba SFTP eliminado', ['deleted' => $deleted]);
+
+                Log::info('=== TEST SFTP CONNECTION EXITOSO ===');
+
+                return [
+                    'success' => true,
+                    'message' => 'Conexión SFTP exitosa. Credenciales válidas y permisos de escritura confirmados.',
+                ];
+            } else {
+                Log::warning('No se pudo subir archivo de prueba SFTP');
+
+                return [
+                    'success' => false,
+                    'message' => 'Conexión SFTP falló. Verifica credenciales y permisos.',
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('=== TEST SFTP CONNECTION ERROR ===', [
+                'host' => $ftpConfig->host,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al conectar con SFTP: ' . $e->getMessage(),
+            ];
+        }
+    }
+
     protected function buildFtpDiskConfig(FtpConfig $ftpConfig)
     {
+        $protocol = $ftpConfig->protocol ?? 'ftp';
+
+        if ($protocol === 'sftp') {
+            return [
+                'driver' => 'sftp',
+                'host' => $ftpConfig->host,
+                'username' => $ftpConfig->username,
+                'password' => $ftpConfig->password,
+                'port' => $ftpConfig->port,
+                'root' => $ftpConfig->root_path,
+                'timeout' => $ftpConfig->timeout,
+                'directoryPerm' => 0755,
+            ];
+        }
+
+        // FTP tradicional
         return [
             'driver' => 'ftp',
             'host' => $ftpConfig->host,

@@ -122,8 +122,6 @@
                                     <th>Archivo Original</th>
                                     <th>Tamaño</th>
                                     <th>Estado</th>
-                                    <th>Registros</th>
-                                    <th>Rechazados</th>
                                     <th>Errores</th>
                                     <th>Recibido</th>
                                     <th>Subido</th>
@@ -155,14 +153,6 @@
                                             <span class="badge bg-info">Recibido</span>
                                         @else
                                             <span class="badge bg-secondary">{{ $log->status }}</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ number_format($log->records_count) }}</td>
-                                    <td>
-                                        @if($log->rejected_count > 0)
-                                            <span class="badge bg-warning text-dark">{{ number_format($log->rejected_count) }}</span>
-                                        @else
-                                            {{ number_format($log->rejected_count) }}
                                         @endif
                                     </td>
                                     <td>

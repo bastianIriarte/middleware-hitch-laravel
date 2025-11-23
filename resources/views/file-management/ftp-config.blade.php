@@ -36,9 +36,18 @@
                     <h5>Configuración de Servidor FTP</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('file-management.ftp-save') }}" method="POST">
+                    <form action="{{ route('file-management.ftp-save') }}" method="POST" id="ftpConfigForm">
                         @csrf
                         <input type="hidden" name="company_id" value="{{ $company->id }}">
+
+                        <div class="mb-3">
+                            <label for="protocol" class="form-label">Protocolo *</label>
+                            <select class="form-select" id="protocol" name="protocol" required>
+                                <option value="ftp" {{ old('protocol', $ftpConfig->protocol ?? 'ftp') == 'ftp' ? 'selected' : '' }}>FTP</option>
+                                <option value="sftp" {{ old('protocol', $ftpConfig->protocol ?? 'ftp') == 'sftp' ? 'selected' : '' }}>SFTP (SSH)</option>
+                            </select>
+                            <small class="form-text text-muted">FTP usa puerto 21, SFTP usa puerto 22</small>
+                        </div>
 
                         <div class="row">
                             <div class="col-md-8">
@@ -187,4 +196,40 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('js_content')
+<script nonce="{{ app('csp_nonce') }}">
+    document.addEventListener('DOMContentLoaded', function() {
+        const protocolSelect = document.getElementById('protocol');
+        const portInput = document.getElementById('port');
+        const sslCheckbox = document.getElementById('ssl');
+        const passiveCheckbox = document.getElementById('passive');
+
+        // Cambiar puerto automáticamente al cambiar protocolo
+        protocolSelect.addEventListener('change', function() {
+            const protocol = this.value;
+
+            if (protocol === 'sftp') {
+                portInput.value = 22;
+                // SFTP no usa SSL ni modo pasivo de la misma forma que FTP
+                sslCheckbox.checked = false;
+                passiveCheckbox.checked = false;
+                sslCheckbox.disabled = true;
+                passiveCheckbox.disabled = true;
+            } else {
+                portInput.value = 21;
+                sslCheckbox.disabled = false;
+                passiveCheckbox.disabled = false;
+                passiveCheckbox.checked = true;
+            }
+        });
+
+        // Inicializar estado al cargar
+        if (protocolSelect.value === 'sftp') {
+            sslCheckbox.disabled = true;
+            passiveCheckbox.disabled = true;
+        }
+    });
+</script>
 @endsection

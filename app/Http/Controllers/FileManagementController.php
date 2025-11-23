@@ -26,7 +26,7 @@ class FileManagementController extends Controller
 
     public function index()
     {
-        $sidenav = "";
+        $sidenav = "file_management";
         $stats = [
             'total_companies' => Company::count(),
             'active_companies' => Company::where('status', true)->count(),
@@ -48,7 +48,7 @@ class FileManagementController extends Controller
 
     public function companies()
     {
-        $sidenav = "";
+        $sidenav = "file_management";
         $companies = Company::withCount(['fileLogs', 'fileErrors'])
             ->with('ftpConfig')
             ->orderBy('name')
@@ -59,7 +59,7 @@ class FileManagementController extends Controller
 
     public function ftpConfig($companyId)
     {
-        $sidenav = "";
+        $sidenav = "file_management";
         $company = Company::findOrFail($companyId);
         $ftpConfig = FtpConfig::where('company_id', $companyId)->first();
 
@@ -68,22 +68,40 @@ class FileManagementController extends Controller
 
     public function saveFtpConfig(FtpConfigRequest $request)
     {
+        // Determinar el puerto por defecto según el protocolo
+        $protocol = $request->protocol ?? 'ftp';
+        $defaultPort = $protocol === 'sftp' ? 22 : 21;
+
+        $data = [
+            'protocol' => $protocol,
+            'host' => $request->host,
+            'port' => $request->port ?? $defaultPort,
+            'username' => $request->username,
+            'root_path' => $request->root_path ?? '/',
+            'ssl' => $request->ssl ?? false,
+            'passive' => $request->passive ?? true,
+            'timeout' => $request->timeout ?? 30,
+            'status' => $request->status ?? true,
+            'user_updated' => auth()->id(),
+        ];
+
+        // Solo actualizar la contraseña si se proporcionó una nueva
+        if (!empty($request->password)) {
+            $data['password'] = $request->password;
+        }
+
         $ftpConfig = FtpConfig::updateOrCreate(
             ['company_id' => $request->company_id],
-            [
-                'host' => $request->host,
-                'port' => $request->port ?? 21,
-                'username' => $request->username,
-                'password' => $request->password,
-                'root_path' => $request->root_path ?? '/',
-                'ssl' => $request->ssl ?? false,
-                'passive' => $request->passive ?? true,
-                'timeout' => $request->timeout ?? 30,
-                'status' => $request->status ?? true,
-                'user_created' => auth()->id(),
-                'user_updated' => auth()->id(),
-            ]
+            $data
         );
+
+        // Si es un registro nuevo y no se proporcionó contraseña, es un error
+        if ($ftpConfig->wasRecentlyCreated && empty($request->password)) {
+            return redirect()
+                ->back()
+                ->withErrors(['password' => 'La contraseña es requerida para nueva configuración'])
+                ->withInput();
+        }
 
         return redirect()
             ->route('file-management.companies')
@@ -104,7 +122,7 @@ class FileManagementController extends Controller
 
     public function logs(Request $request)
     {
-        $sidenav = "";
+        $sidenav = "file_management";
 
         $companies = Company::where('status', true)->get();
         $fileTypes = FileType::where('status', true)->get();
@@ -138,7 +156,7 @@ class FileManagementController extends Controller
 
     public function errors(Request $request)
     {
-        $sidenav = "";
+        $sidenav = "file_management";
         $companies = Company::where('status', true)->get();
         $fileTypes = FileType::where('status', true)->get();
 
@@ -171,7 +189,7 @@ class FileManagementController extends Controller
 
     public function stats(Request $request)
     {
-        $sidenav = "";
+        $sidenav = "file_management";
         $companies = Company::where('status', true)->get();
         $fileTypes = FileType::where('status', true)->get();
 

@@ -15,6 +15,7 @@ class FtpConfig extends Model
 
     protected $fillable = [
         'company_id',
+        'protocol',
         'host',
         'port',
         'username',

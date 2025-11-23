@@ -82,6 +82,16 @@ Route::prefix('dashboard/archivos')->name('file-management.')->group(function ()
     Route::get('/estadisticas', [App\Http\Controllers\FileManagementController::class, 'stats'])->name('stats');
 });
 
+#*********************************************#
+#******** ROUTES WATTS EXTRACTION ************#
+#*********************************************#
+Route::prefix('dashboard/watts-extraction')->name('watts-extraction.')->group(function () {
+    Route::get('/', [App\Http\Controllers\WattsExtractionController::class, 'index'])->name('index');
+    Route::post('/execute', [App\Http\Controllers\WattsExtractionController::class, 'execute'])->name('execute');
+    Route::post('/execute-all', [App\Http\Controllers\WattsExtractionController::class, 'executeAll'])->name('execute-all');
+    Route::get('/check-health', [App\Http\Controllers\WattsExtractionController::class, 'checkHealth'])->name('check-health');
+});
+
 Route::get('api/documentation/swagger.json', function () {
     return response()->file(storage_path('api-docs/api-docs.json'));
 });

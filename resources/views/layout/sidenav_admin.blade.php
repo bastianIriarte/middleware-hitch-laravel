@@ -38,6 +38,16 @@
             <i class="fa fa-plug"></i>
             <span>Conexiones</span>
         </a>
+
+        <a href="{{ route('file-management.index') }}" class="menu-item @if ($sidenav == 'file_management') active @endif">
+            <i class="fa fa-files-o"></i>
+            <span>Gestión de Archivos</span>
+        </a>
+
+        <a href="{{ route('watts-extraction.index') }}" class="menu-item @if ($sidenav == 'watts_extraction') active @endif">
+            <i class="fa fa-download"></i>
+            <span>Extracciones Watts</span>
+        </a>
     </div>
 </div>
 
