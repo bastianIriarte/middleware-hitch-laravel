@@ -1,8 +1,8 @@
     <div class="flex flex-wrap gap-3 border-b pb-2">
 
-        <a href="{{ route('file-management.index') }}"
+        <a href="{{ route('dashboard') }}"
             class="px-4 py-2 rounded-lg text-sm font-semibold 
-                 @if (request()->routeIs('file-management.index')) bg-primary-500 text-white shadow
+                 @if (request()->routeIs('file-management.index') || request()->routeIs('dashboard')) bg-primary-500 text-white shadow
                  @else
                      text-primary-700 hover:bg-primary-50 @endif">
             Dashboard

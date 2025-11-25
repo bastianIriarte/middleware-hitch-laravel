@@ -5,7 +5,7 @@ return [
     'documentations' => [
         'default' => [
             'api' => [
-                'title' => 'FamilyShop API',
+                'title' => 'MiddlewareHitch API',
             ],
 
             'routes' => [

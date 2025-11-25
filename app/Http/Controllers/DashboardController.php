@@ -17,18 +17,18 @@ class DashboardController extends Controller
     {
         $users_data = Users::where('deleted', false)->where('id', '!=', 1)->count();
 
-        $resources = Resource::where('status', 1)
-            ->where('show_user', 1)
-            ->get();
+        // $resources = Resource::where('status', 1)
+        //     ->where('show_user', 1)
+        //     ->get();
 
-        $resources = $resources->map(function ($resource) {
-            return (object)[
-                'id' => $resource->id,
-                'name' => $resource->name,
-                'slug' => $resource->slug,
-                'counts' => $resource->integrationCounts(),
-            ];
-        });
+        // $resources = $resources->map(function ($resource) {
+        //     return (object)[
+        //         'id' => $resource->id,
+        //         'name' => $resource->name,
+        //         'slug' => $resource->slug,
+        //         'counts' => $resource->integrationCounts(),
+        //     ];
+        // });
 
         // pre_die($resources);
 
@@ -39,7 +39,7 @@ class DashboardController extends Controller
             'title',
             'sidenav',
             'users_data',
-            'resources',
+            // 'resources',
             'title_table'
         ));
     }

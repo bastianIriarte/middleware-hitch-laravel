@@ -7,7 +7,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 
 /**
- * @OA\Info(title="FamilyShop API", version="0.1")
+ * @OA\Info(title="MiddlewareHitch API", version="0.1")
  *
  * @OA\SecurityScheme(
  *     securityScheme="sanctum",

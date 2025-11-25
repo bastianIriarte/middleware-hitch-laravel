@@ -42,7 +42,7 @@ Route::get('/generar-usuario', [RegisterController::class, 'su_register'])->name
 Route::get('/sesion-finalizada', [LoginController::class, 'session_finish'])->name('session-finish');
 
 #DASHBOARD
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 #*********************************************#
 #*************** ROUTES USERS ****************#
@@ -55,22 +55,12 @@ Route::post('/dashboard/usuarios/eliminar', [UsersController::class, 'destroy'])
 Route::post('/dashboard/usuarios/restablecer-contrasena', [UsersController::class, 'restore_password'])->name('user-restore-password');
 Route::post('/dashboard/usuarios/confirmar-cuenta', [UsersController::class, 'confirm_account'])->name('user-confirm-account');
 
-#*********************************************#
-#*********** ROUTES INTEGRATIONS *************#
-#*********************************************#
-Route::get('/dashboard/integraciones/{slug}', [IntegrationsController::class, 'index'])->name('integrations');
-// Route::post('/dashboard/integraciones/{slug}/reintegrar', [IntegrationsController::class, 'reintegrate'])->name('integrations-reintegrate');
-Route::post('/dashboard/integraciones/{slug}/cerrar', [IntegrationsController::class, 'close'])->name('integrations-close');
-
-#*********************************************#
-#********** ROUTES API CONNECTIONS ***********#
-#*********************************************#
-Route::get('/dashboard/conexiones', [ApiConnectionsController::class, 'index'])->name('api-connections');
-Route::post('/dashboard/conexiones/actualizar', [ApiConnectionsController::class, 'update'])->name('api-connections-update');
 
 #*********************************************#
 #******** ROUTES FILE MANAGEMENT *************#
 #*********************************************#
+Route::get('/', [App\Http\Controllers\FileManagementController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [App\Http\Controllers\FileManagementController::class, 'index'])->name('dashboard');
 Route::prefix('dashboard/archivos')->name('file-management.')->group(function () {
     Route::get('/', [App\Http\Controllers\FileManagementController::class, 'index'])->name('index');
     Route::get('/empresas', [App\Http\Controllers\FileManagementController::class, 'companies'])->name('companies');
