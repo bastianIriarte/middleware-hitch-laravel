@@ -104,7 +104,16 @@
 
                 <div>
                     <p class="text-sm text-gray-500">Nombre almacenado</p>
-                    <p class="font-medium">{{ $log->stored_filename ?? 'No almacenado' }}</p>
+                    @if($log->stored_filename && $log->file_path)
+                        <a href="{{ route('file-management.download', $log->id) }}"
+                           class="font-medium text-primary-600 hover:text-primary-800 hover:underline inline-flex items-center gap-1"
+                           title="Descargar archivo">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            {{ $log->stored_filename }}
+                        </a>
+                    @else
+                        <p class="font-medium text-gray-500">No almacenado</p>
+                    @endif
                 </div>
 
                 <div>
@@ -172,6 +181,7 @@
                             <th class="px-4 py-2">Mensaje</th>
                             <th class="px-4 py-2">Línea</th>
                             <th class="px-4 py-2">Severidad</th>
+                            <th class="px-4 py-2">Detalle</th>
                             <th class="px-4 py-2">Fecha</th>
                         </tr>
                     </thead>
@@ -181,10 +191,28 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 font-medium">#{{ $error->id }}</td>
                             <td class="px-4 py-2">{{ $error->error_type }}</td>
-                            <td class="px-4 py-2">{{ Str::limit($error->error_message, 50) }}</td>
+                            <td class="px-4 py-2">{{ $error->error_message, 50 }}</td>
                             <td class="px-4 py-2">{{ $error->line_number ?? '-' }}</td>
                             <td class="px-4 py-2">
                                 <x-badges.severity :level="$error->severity" />
+                            </td>
+                            <td class="px-4 py-2">
+                                @php
+                                    $details = json_decode($error->error_details, true);
+                                    $lineData = $details['line'] ?? null;
+                                @endphp
+                                @if($lineData)
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-600 truncate max-w-[200px]">{{ Str::limit($lineData, 40) }}</span>
+                                        <button
+                                            onclick="showErrorDetail({{ $error->id }})"
+                                            class="text-blue-600 hover:text-blue-800 text-xs font-medium whitespace-nowrap">
+                                            Ver más
+                                        </button>
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
                             </td>
                             <td class="px-4 py-2 text-xs">
                                 {{ $error->created_at->format('d/m/Y H:i') }}
@@ -209,5 +237,124 @@
     </div>
 
 </div>
+
+<!-- Modal para mostrar detalle completo del error -->
+<div id="errorDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <!-- Header del Modal -->
+        <div class="flex justify-between items-center px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Detalle Completo del Error</h3>
+            <button onclick="closeErrorDetail()" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Contenido del Modal -->
+        <div class="px-6 py-4 overflow-y-auto flex-1">
+            <div class="space-y-4">
+                <!-- Información del Error -->
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">ID del Error</p>
+                    <p class="font-medium text-gray-800" id="modalErrorId">-</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Tipo</p>
+                    <p class="font-medium text-gray-800" id="modalErrorType">-</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Mensaje</p>
+                    <p class="font-medium text-gray-800" id="modalErrorMessage">-</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Línea Completa</p>
+                    <div class="bg-gray-50 border rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm text-gray-700 whitespace-pre-wrap break-words" id="modalLineData">-</pre>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Detalle Original del Error</p>
+                    <div class="bg-gray-50 border rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm text-gray-700 whitespace-pre-wrap break-words" id="modalOriginalError">-</pre>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Detalle Completo (JSON)</p>
+                    <div class="bg-gray-50 border rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-xs text-gray-600" id="modalFullDetails">-</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer del Modal -->
+        <div class="px-6 py-4 border-t flex justify-end">
+            <button onclick="closeErrorDetail()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Datos de errores en formato JSON para acceso desde JavaScript
+    const errorsData = {!! json_encode($log->errors->map(function($error) {
+        return [
+            'id' => $error->id,
+            'type' => $error->error_type,
+            'message' => $error->error_message,
+            'details' => $error->error_details,
+        ];
+    })) !!};
+
+    function showErrorDetail(errorId) {
+        const error = errorsData.find(e => e.id === errorId);
+        if (!error) return;
+
+        const details = JSON.parse(error.details || '{}');
+        const lineData = details.line || '-';
+        const originalError = Array.isArray(details.original_error)
+            ? details.original_error.join('\n')
+            : (details.original_error || '-');
+
+        // Rellenar el modal con la información
+        document.getElementById('modalErrorId').textContent = '#' + error.id;
+        document.getElementById('modalErrorType').textContent = error.type;
+        document.getElementById('modalErrorMessage').textContent = error.message;
+        document.getElementById('modalLineData').textContent = lineData;
+        document.getElementById('modalOriginalError').textContent = originalError;
+        document.getElementById('modalFullDetails').textContent = JSON.stringify(details, null, 2);
+
+        // Mostrar el modal
+        document.getElementById('errorDetailModal').classList.remove('hidden');
+
+        // Reinicializar los iconos de Lucide en el modal
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    function closeErrorDetail() {
+        document.getElementById('errorDetailModal').classList.add('hidden');
+    }
+
+    // Cerrar modal al hacer clic fuera de él
+    document.getElementById('errorDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeErrorDetail();
+        }
+    });
+
+    // Cerrar modal con la tecla Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeErrorDetail();
+        }
+    });
+</script>
 
 @endsection

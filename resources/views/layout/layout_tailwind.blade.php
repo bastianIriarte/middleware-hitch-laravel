@@ -135,5 +135,6 @@
     </script>
 
     @stack('scripts')
+    @yield('js_content')
 </body>
 </html>

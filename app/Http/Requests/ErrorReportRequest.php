@@ -21,14 +21,39 @@ class ErrorReportRequest extends FormRequest
      *
      * @return array
      */
+    /**
+     * Prepare the data for validation.
+     * Convierte camelCase a snake_case para compatibilidad
+     */
+    protected function prepareForValidation()
+    {
+        // Convertir camelCase a snake_case si vienen en camelCase
+        $data = [];
+
+        if ($this->has('companyCode')) {
+            $data['company_code'] = $this->input('companyCode');
+        }
+
+        if ($this->has('fileTypeCode')) {
+            $data['file_type_code'] = $this->input('fileTypeCode');
+        }
+
+        if (!empty($data)) {
+            $this->merge($data);
+        }
+    }
+
     public function rules()
     {
         return [
-            'company_code' => 'required|string|exists:companies,code',
-            'file_type_code' => 'required|string|exists:file_types,code',
+            'company_code' => 'required|string',
+            'file_type_code' => 'required|string',
             'errors' => 'required|array',
-            'errors.*.error_type' => 'required|string',
-            'errors.*.error_message' => 'required|string',
+            // Formato flexible: acepta tanto el formato nuevo (line, error) como el antiguo (error_type, error_message)
+            'errors.*.line' => 'nullable|string',
+            'errors.*.error' => 'nullable', // Puede ser string o array
+            'errors.*.error_type' => 'nullable|string',
+            'errors.*.error_message' => 'nullable|string',
             'errors.*.error_details' => 'nullable|string',
             'errors.*.line_number' => 'nullable|integer',
             'errors.*.record_data' => 'nullable|string',

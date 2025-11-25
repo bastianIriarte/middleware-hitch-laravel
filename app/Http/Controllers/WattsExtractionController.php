@@ -80,9 +80,10 @@ class WattsExtractionController extends Controller
             $fileLog = FileLog::create([
                 'company_id' => $company->id,
                 'file_type_id' => $fileType->id,
-                'original_filename' => "extraction_{$extractionType}_" . now()->format('Y-m-d_His') . ".txt",
+                // 'original_filename' => "extraction_{$fileType->name}_" . now()->format('YmdHis') . ".csv",
+                'original_filename' => "",
                 'status' => 'received',
-                'received_at' => now(),
+                'received_at' => null,
                 'user_created' => auth()->id(),
             ]);
 

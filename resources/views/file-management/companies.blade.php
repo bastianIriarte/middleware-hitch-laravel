@@ -13,39 +13,7 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex flex-wrap gap-3 border-b pb-2">
-
-        <a href="{{ route('file-management.index') }}"
-           class="px-4 py-2 rounded-lg text-sm font-semibold 
-           {{ request()->routeIs('file-management.index') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
-            Dashboard
-        </a>
-
-        <a href="{{ route('file-management.companies') }}"
-           class="px-4 py-2 rounded-lg text-sm font-semibold 
-           {{ request()->routeIs('file-management.companies') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
-            Empresas & FTP
-        </a>
-
-        <a href="{{ route('file-management.logs') }}"
-           class="px-4 py-2 rounded-lg text-sm font-semibold 
-           {{ request()->routeIs('file-management.logs') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
-            Logs de Archivos
-        </a>
-
-        <a href="{{ route('file-management.errors') }}"
-           class="px-4 py-2 rounded-lg text-sm font-semibold 
-           {{ request()->routeIs('file-management.errors') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
-            Errores
-        </a>
-
-        <a href="{{ route('file-management.stats') }}"
-           class="px-4 py-2 rounded-lg text-sm font-semibold 
-           {{ request()->routeIs('file-management.stats') ? 'bg-primary-500 text-white shadow' : 'text-primary-700 hover:bg-primary-50' }}">
-            Estadísticas
-        </a>
-
-    </div>
+      <x-navigation />
 
     <!-- Alertas -->
     @if(session('success'))

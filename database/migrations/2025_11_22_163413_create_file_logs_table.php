@@ -15,9 +15,9 @@ class CreateFileLogsTable extends Migration
     {
         Schema::create('file_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->foreignId('file_type_id')->constrained('file_types')->onDelete('cascade');
-            $table->string('original_filename');
+            $table->unsignedBigInteger('company_id')->nullable();
+             $table->unsignedBigInteger('file_type_id')->nullable();
+            $table->string('original_filename')->nullable();
             $table->string('stored_filename')->nullable();
             $table->string('file_path')->nullable();
             $table->bigInteger('file_size')->nullable();
@@ -33,6 +33,17 @@ class CreateFileLogsTable extends Migration
             $table->unsignedBigInteger('user_deleted')->nullable();
             $table->softDeletes();
             $table->timestamps();
+
+
+            $table->foreign('company_id')
+                ->references('id')->on('companies')
+                ->onDelete('cascade')
+                ->onUpdate('restrict');
+
+            $table->foreign('file_type_id')
+                ->references('id')->on('file_types')
+                ->onDelete('cascade')
+                ->onUpdate('restrict');
 
             $table->foreign('user_created')->references('id')->on('users')->onDelete('set null');
             $table->foreign('user_updated')->references('id')->on('users')->onDelete('set null');

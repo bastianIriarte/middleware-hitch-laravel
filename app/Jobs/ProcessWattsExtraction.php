@@ -70,6 +70,7 @@ class ProcessWattsExtraction implements ShouldQueue
             if ($fileLog) {
                 $fileLog->update([
                     'status' => 'processing',
+                    'received_at' => now(),
                 ]);
             }
 
@@ -77,6 +78,10 @@ class ProcessWattsExtraction implements ShouldQueue
             if (empty($this->config)) {
                 $this->config = $wattsApiService->getDefaultConfig();
             }
+
+            // Agregar customerCode y fileCode al config usando los datos del Job
+            $this->config['customerCode'] = $this->companyCode;
+            $this->config['fileCode'] = $this->getFileCodeFromType($this->extractionType);
 
             // Ejecutar la extracción según el tipo
             $result = $this->executeExtraction($wattsApiService);
@@ -108,22 +113,24 @@ class ProcessWattsExtraction implements ShouldQueue
 
                     // Subir archivo al FTP
                     $filename = $result['filename'] ?? "extraction_{$this->extractionType}_" . now()->format('Y-m-d_His') . ".txt";
-                    
-                    // Guardar el contenido en un archivo temporal
-                    $tempPath = storage_path('app/temp/' . $filename);
-                    if (!file_exists(dirname($tempPath))) {
-                        mkdir(dirname($tempPath), 0755, true);
+
+                    // Generar nombre de archivo almacenado con timestamp único
+                    $storedFilename = now()->format('Ymd_His') . '_' . $filename;
+
+                    // Guardar el archivo de forma permanente
+                    $storagePath = 'watts/' . $this->companyCode . '/' . date('Y/m');
+                    $fullStoragePath = storage_path('app/' . $storagePath);
+
+                    if (!file_exists($fullStoragePath)) {
+                        mkdir($fullStoragePath, 0755, true);
                     }
-                    file_put_contents($tempPath, $result['fileContent']);
-                    
-                    // Subir al FTP usando el Company object y la ruta del archivo temporal
+
+                    $localFilePath = $fullStoragePath . '/' . $storedFilename;
+                    file_put_contents($localFilePath, $result['fileContent']);
+
+                    // Subir al FTP usando el archivo guardado
                     $remotePath = $filename;
-                    $uploadResult = $ftpService->uploadFile($company, $tempPath, $remotePath);
-                    
-                    // Eliminar archivo temporal
-                    if (file_exists($tempPath)) {
-                        unlink($tempPath);
-                    }
+                    $uploadResult = $ftpService->uploadFile($company, $localFilePath, $remotePath);
 
                     if (!$uploadResult['success']) {
                         throw new \Exception("Error al subir archivo al FTP: " . $uploadResult['message']);
@@ -149,12 +156,33 @@ class ProcessWattsExtraction implements ShouldQueue
                         'error_message' => null,
                     ];
 
-                    // Si se subió un archivo, actualizar el nombre
+                    // Si se subió un archivo, actualizar el nombre y tamaño
                     if (isset($result['filename'])) {
                         $updateData['original_filename'] = $result['filename'];
                     }
 
+                    // Guardar el tamaño del archivo en bytes
+                    if (isset($result['fileContent'])) {
+                        $updateData['file_size'] = strlen($result['fileContent']);
+
+                        Log::info("[ProcessWattsExtraction] Guardando tamaño de archivo", [
+                            'file_size' => $updateData['file_size'],
+                            'filename' => $updateData['original_filename'] ?? null,
+                        ]);
+                    }
+
+                    // Guardar información de almacenamiento local si se guardó
+                    if (isset($storedFilename) && isset($storagePath)) {
+                        $updateData['stored_filename'] = $storedFilename;
+                        $updateData['file_path'] = $storagePath . '/' . $storedFilename;
+                    }
+
                     $fileLog->update($updateData);
+
+                    Log::info("[ProcessWattsExtraction] FileLog actualizado", [
+                        'file_log_id' => $fileLog->id,
+                        'update_data' => $updateData,
+                    ]);
                 }
             } else {
                 Log::error("[ProcessWattsExtraction] Extracción falló", [
@@ -201,10 +229,27 @@ class ProcessWattsExtraction implements ShouldQueue
     }
 
     /**
+     * Obtiene el código de archivo (fileCode) según el tipo de extracción
+     */
+    protected function getFileCodeFromType(string $extractionType): string
+    {
+        $fileCodeMap = [
+            'customers' => 'CUSTOMERS',
+            'products' => 'PRODUCTS',
+            'vendors' => 'VENDORS',
+            'sellout' => 'SELLOUT',
+            'all' => 'ALL',
+        ];
+
+        return $fileCodeMap[$extractionType] ?? 'UNKNOWN';
+    }
+
+    /**
      * Ejecuta la extracción según el tipo
      */
     protected function executeExtraction(WattsApiService $wattsApiService): array
     {
+        Log::info(["[executeExtraction]" => $wattsApiService]);
         switch ($this->extractionType) {
             case 'all':
                 return $wattsApiService->extractAll($this->config);

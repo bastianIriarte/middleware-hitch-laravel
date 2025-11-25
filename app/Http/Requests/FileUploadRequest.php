@@ -23,8 +23,8 @@ class FileUploadRequest extends FormRequest
      */
     public function rules()
     {
-        return [            
-            'file' => 'nullable|file|mimes:csv,txt,xlsx,xls|max:10240',
+        return [
+            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
             'records_count' => 'nullable|integer|min:0',
             'rejected_count' => 'nullable|integer|min:0',
         ];

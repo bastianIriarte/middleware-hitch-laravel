@@ -211,10 +211,31 @@ class FileManagementController extends Controller
     public function logDetail($id)
     {
         $sidenav = "file_management";
-        
+
         $log = FileLog::with(['company', 'fileType', 'errors'])
             ->findOrFail($id);
 
         return view('file-management.log-detail', compact('sidenav', 'log'));
+    }
+
+    public function downloadFile($id)
+    {
+        $log = FileLog::findOrFail($id);
+
+        // Verificar que el archivo tiene información de almacenamiento
+        if (!$log->stored_filename || !$log->file_path) {
+            return redirect()->back()->with('error', 'El archivo no está disponible para descarga');
+        }
+
+        // Construir la ruta completa del archivo
+        $filePath = storage_path('app/' . $log->file_path);
+
+        // Verificar que el archivo existe
+        if (!file_exists($filePath)) {
+            return redirect()->back()->with('error', 'El archivo no se encontró en el servidor');
+        }
+
+        // Descargar el archivo con el nombre original
+        return response()->download($filePath, $log->original_filename);
     }
 }

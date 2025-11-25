@@ -15,9 +15,9 @@ class CreateFileErrorsTable extends Migration
     {
         Schema::create('file_errors', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->foreignId('file_type_id')->constrained('file_types')->onDelete('cascade');
-            $table->foreignId('file_log_id')->nullable()->constrained('file_logs')->onDelete('cascade');
+            $table->unsignedBigInteger('company_id')->nullable();
+            $table->unsignedBigInteger('file_type_id')->nullable();
+            $table->unsignedBigInteger('file_log_id')->nullable();
             $table->string('error_type')->default('validation');
             $table->text('error_message');
             $table->text('error_details')->nullable();
@@ -29,6 +29,23 @@ class CreateFileErrorsTable extends Migration
             $table->unsignedBigInteger('user_deleted')->nullable();
             $table->softDeletes();
             $table->timestamps();
+
+
+
+            $table->foreign('company_id')
+                ->references('id')->on('companies')
+                ->onDelete('cascade')
+                ->onUpdate('restrict');
+
+            $table->foreign('file_log_id')
+                ->references('id')->on('file_logs')
+                ->onDelete('cascade')
+                ->onUpdate('restrict');
+
+            $table->foreign('file_type_id')
+                ->references('id')->on('file_types')
+                ->onDelete('cascade')
+                ->onUpdate('restrict');
 
             $table->foreign('user_created')->references('id')->on('users')->onDelete('set null');
             $table->foreign('user_updated')->references('id')->on('users')->onDelete('set null');
